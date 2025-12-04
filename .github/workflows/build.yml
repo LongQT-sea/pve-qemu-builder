@@ -1,0 +1,105 @@
+name: Build and Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Optional: tag the build (e.g., v0.0.1) to attempt uploading it to Releases'
+        required: false
+        type: string
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # needed to create releases
+    container:
+      image: debian:13
+      options: --privileged
+    steps:      
+      - name: Install dependencies
+        run: |
+          export DEBIAN_FRONTEND=noninteractive
+          echo 'APT::Get::Assume-Yes "true";' > /etc/apt/apt.conf.d/90assumeyes
+          
+          apt update && apt install curl
+          
+          curl -L https://enterprise.proxmox.com/debian/proxmox-archive-keyring-trixie.gpg \
+            -o /usr/share/keyrings/proxmox-archive-keyring.gpg
+          cat > /etc/apt/sources.list.d/proxmox-devel.sources << 'EOF'
+          Types: deb
+          URIs: http://download.proxmox.com/debian/devel/
+          Suites: trixie
+          Components: main
+          Signed-By: /usr/share/keyrings/proxmox-archive-keyring.gpg
+          Enabled: true
+          EOF
+          
+          cat > /etc/apt/sources.list.d/proxmox-test.sources << 'EOF'
+          Types: deb
+          URIs: http://download.proxmox.com/debian/pve
+          Suites: trixie
+          Components: pve-test
+          Signed-By: /usr/share/keyrings/proxmox-archive-keyring.gpg
+          Enabled: true
+          EOF
+          
+          apt update && apt install git devscripts build-essential debhelper pve-doc-generator
+      
+      - name: Install github cli
+        if: github.event.inputs.release_tag != ''
+        run: |
+          mkdir -p -m 755 /etc/apt/keyrings
+          curl -L https://cli.github.com/packages/githubcli-archive-keyring.gpg \
+            -o /etc/apt/keyrings/githubcli-archive-keyring.gpg
+          chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg
+          mkdir -p -m 755 /etc/apt/sources.list.d
+          echo "deb [arch=$(dpkg --print-architecture) \
+            signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] \
+            https://cli.github.com/packages stable main" | \
+            tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+          apt update && apt install gh
+      
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: '0'
+          submodules: 'true'
+      
+      - name: Configure git safe directory
+        run: |
+          git config --global --add safe.directory '*'
+      
+      - name: Apply IGD related patches
+        run: |
+          # Remove legacy mode restriction to attempt enabling GOP display output on all generations
+          sed -i 's/^\([[:space:]]*\)\(.*>= 6 && gen <= 9.*&&\)/\1\/\/ \2/' ./qemu/hw/vfio/igd.c
+          
+          # Not sure why this exists, upstream QEMU already includes this patch.
+          sed -i 's|^extra/0004-vfio-igd-Enable-quirks-when-IGD-is-not-the-primary-d.patch|# &|' ./debian/patches/series
+      
+      - name: Build pve-qemu-kvm
+        run: |
+          mk-build-deps --install
+          
+          cd qemu && meson subprojects download && cd ..
+          
+          make clean && make deb
+      
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v5
+        with:
+          name: pve-qemu-kvm.deb
+          path: pve-qemu-kvm_*_amd64.deb
+      
+      - name: Create Release
+        if: github.event.inputs.release_tag != ''
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          date_str="$(date -u +%Y-%m-%d)"
+          title="Build: ${date_str}"
+          notes="$title"
+          tag=${{ github.event.inputs.release_tag }}
+          gh release create $tag \
+            --title "$title" \
+            --notes "$notes" \
+            pve-qemu-kvm_*_amd64.deb

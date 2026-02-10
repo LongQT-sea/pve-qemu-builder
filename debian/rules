@@ -14,6 +14,9 @@ flagfile := $(destdir)/usr/share/kvm/recognized-CPUID-flags-x86_64
 machine_file_x86_64 := $(destdir)/usr/share/kvm/machine-versions-x86_64.json
 machine_file_aarch64 := $(destdir)/usr/share/kvm/machine-versions-aarch64.json
 
+cpu_models_file_x86_64 := $(destdir)/usr/share/kvm/cpu-models-x86_64.json
+cpu_models_file_aarch64 := $(destdir)/usr/share/kvm/cpu-models-aarch64.json
+
 # default QEMU out-of-tree build directory is ./build
 BUILDDIR=build
 
@@ -125,6 +128,15 @@ install: build
 	# Supported machine versions are static for a given QEMU binary.
 	$(destdir)/usr/bin/qemu-system-x86_64 -machine help | ./debian/parse-machines.pl > $(machine_file_x86_64)
 	$(destdir)/usr/bin/qemu-system-aarch64 -machine help | ./debian/parse-machines.pl > $(machine_file_aarch64)
+
+	# Supported CPU models are static for a given QEMU binary.
+	$(destdir)/usr/bin/qemu-system-x86_64 -cpu help | ./debian/parse-cpu-models.pl > $(cpu_models_file_x86_64)
+	$(destdir)/usr/bin/qemu-system-aarch64 -cpu help | ./debian/parse-cpu-models.pl > $(cpu_models_file_aarch64)
+	# NOTE: If the diff fails here after upgrading the QEMU submodule, check which new models
+	# are to be picked up and which are to be excluded, adapt to other changes and commit the
+	# new expected files (and parse-cpu-models.pl script).
+	diff -u $(cpu_models_file_x86_64) ./debian/cpu-models-x86_64.json
+	diff -u $(cpu_models_file_aarch64) ./debian/cpu-models-aarch64.json
 
 # Build architecture-independent files here.
 binary-indep: build install

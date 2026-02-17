@@ -1,3 +1,14 @@
+pve-qemu-kvm (10.1.2-7) trixie; urgency=medium
+
+  * fix #7222: add fix for crash caused by zero write during sync drive
+    mirror.
+
+  * fix #7197: add fix to avoid misaligned BLKZEROOUT casuing a hard error.
+
+  * generate and ship static list of CPU models for x86-64 and aarch64.
+
+ -- Proxmox Support Team <support@proxmox.com>  Tue, 17 Feb 2026 19:22:05 +0100
+
 pve-qemu-kvm (10.1.2-6) trixie; urgency=medium
 
   * fix /usr/bin/kvm symlink to point to actual host architecture.

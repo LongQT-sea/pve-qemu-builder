@@ -24,7 +24,7 @@ Signed-off-by: Thomas Lamprecht <t.lamprecht@proxmox.com>
  1 file changed, 18 insertions(+), 6 deletions(-)
 
 diff --git a/block/mirror.c b/block/mirror.c
-index a184e91478..79b6f16d27 100644
+index 99805e7a9d..7dae4d6e8a 100644
 --- a/block/mirror.c
 +++ b/block/mirror.c
 @@ -734,8 +734,6 @@ static int mirror_exit_common(Job *job)
@@ -55,7 +55,7 @@ index a184e91478..79b6f16d27 100644
      bs_opaque->job = NULL;
  
      bdrv_drained_end(src);
-@@ -1877,10 +1887,6 @@ static BlockJob *mirror_start_job(
+@@ -1880,10 +1890,6 @@ static BlockJob *mirror_start_job(
                         " sync mode",
                         MirrorSyncMode_str(sync_mode));
              return NULL;
@@ -66,7 +66,7 @@ index a184e91478..79b6f16d27 100644
          }
      } else if (bitmap) {
          error_setg(errp,
-@@ -1897,6 +1903,12 @@ static BlockJob *mirror_start_job(
+@@ -1900,6 +1906,12 @@ static BlockJob *mirror_start_job(
              return NULL;
          }
          granularity = bdrv_dirty_bitmap_granularity(bitmap);

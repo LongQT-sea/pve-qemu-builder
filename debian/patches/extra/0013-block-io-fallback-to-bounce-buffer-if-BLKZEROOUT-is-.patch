@@ -1,0 +1,36 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Fiona Ebner <f.ebner@proxmox.com>
+Date: Mon, 5 Jan 2026 13:36:20 +0100
+Subject: [PATCH] block/io: fallback to bounce buffer if BLKZEROOUT is not
+ supported because of alignment
+
+Commit 5634622bcb ("file-posix: allow BLKZEROOUT with -t writeback")
+enables the BLKZEROOUT ioctl when using 'writeback' cache, regressing
+certain 'qemu-img convert' invocations, because of a pre-existing
+issue. Namely, the BLKZEROOUT ioctl might fail with errno EINVAL when
+the request is shorter than the block size of the block device.
+Fallback to the bounce buffer, similar to when the ioctl is not
+supported at all, rather than treating such an error as fatal.
+
+Resolves: https://gitlab.com/qemu-project/qemu/-/issues/3257
+Resolves: https://bugzilla.proxmox.com/show_bug.cgi?id=7197
+Cc: qemu-stable@nongnu.org
+Signed-off-by: Fiona Ebner <f.ebner@proxmox.com>
+---
+ block/io.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/block/io.c b/block/io.c
+index 9bd8ba8431..7b1ad0996a 100644
+--- a/block/io.c
++++ b/block/io.c
+@@ -1917,7 +1917,8 @@ bdrv_co_do_pwrite_zeroes(BlockDriverState *bs, int64_t offset, int64_t bytes,
+             assert(!bs->supported_zero_flags);
+         }
+ 
+-        if (ret == -ENOTSUP && !(flags & BDRV_REQ_NO_FALLBACK)) {
++        if ((ret == -ENOTSUP || (ret == -EINVAL && num < alignment)) &&
++            !(flags & BDRV_REQ_NO_FALLBACK)) {
+             /* Fall back to bounce buffer if write zeroes is unsupported */
+             BdrvRequestFlags write_flags = flags & ~BDRV_REQ_ZERO_WRITE;
+ 

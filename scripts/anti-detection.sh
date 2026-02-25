@@ -26,10 +26,6 @@
 #   M12 SMBIOS processor cache handles 0xFFFF
 #   M13 SMBIOS memory type "RAM" (0x07) and zero voltage fields
 #
-# Skipped intentionally:
-#   H9  PCI vendor 0x1af4 (Red Hat Qumranet / virtio) changing breaks drivers
-#   H10 PCI vendor 0x1b36 (Red Hat) changing breaks drivers
-#
 # Usage:
 #   cd /path/to/pve-qemu/qemu
 #   bash /path/to/anti-detection.sh [--dry-run]
@@ -670,7 +666,7 @@ run_patches() {
     #
     # "ATA     " (8 bytes, space-padded) is the vendor written by real ATA disks
     # behind a SCSI/SAT bridge -- extremely common for SATA SSDs.
-    # "SAMSUNG HARDDISK" and "MATSHITA CD-ROM " are real OEM product strings.
+    # "WDC WD10EZEX" and "MATSHITA CD-ROM " are real OEM product strings.
     # "LSI MPT Fusion" is the correct product string for the LSI/Broadcom SAS HBA
     # that the MPT Fusion emulation is modelled after.
     apply_sed \
@@ -681,11 +677,11 @@ run_patches() {
         's#s->vendor = g_strdup("QEMU")#s->vendor = g_strdup("ATA     ")#'
 
     apply_sed \
-        'M3b: SCSI harddisk product "QEMU HARDDISK" -> "SAMSUNG HARDDISK"' \
+        'M3b: SCSI harddisk product "QEMU HARDDISK" -> "WDC WD10EZEX"' \
         'hw/scsi/scsi-disk.c' \
         'g_strdup("QEMU HARDDISK")' \
-        'g_strdup("SAMSUNG HARDDISK")' \
-        's#g_strdup("QEMU HARDDISK")#g_strdup("SAMSUNG HARDDISK")#'
+        'g_strdup("WDC WD10EZEX")' \
+        's#g_strdup("QEMU HARDDISK")#g_strdup("WDC WD10EZEX")#'
 
     apply_sed \
         'M3c: SCSI CD-ROM product "QEMU CD-ROM" -> "MATSHITA CD-ROM "' \

@@ -1,25 +1,22 @@
 #!/usr/bin/env bash
-# https://github.com/proxmox/pve-qemu
+# https://git.proxmox.com/?p=pve-edk2-firmware.git
 set -euo pipefail
 
 BRANCH="${1:-master}"
 IMAGE="ghcr.io/longqt-sea/pve-devbox:latest"
 
-docker run --rm \
+docker run --rm --user $(id -u):$(id -g) \
     -v "./output:/output" \
-    -v "$(pwd)/scripts/anti-detection.sh:/anti-detection.sh:ro" \
     "$IMAGE" sh -e -c "
     echo 'APT::Get::Assume-Yes true;' > /etc/apt/apt.conf.d/90assumeyes
     apt-get update
 
     git clone --depth=1 --branch '$BRANCH' \
-      https://github.com/proxmox/pve-qemu
+      git://git.proxmox.com/git/pve-edk2-firmware.git
 
-    cd pve-qemu && git submodule update --init --recursive
+    cd pve-edk2-firmware && git submodule update --init --recursive
     mk-build-deps --install
-    cd qemu && meson subprojects download
-    bash /anti-detection.sh && cd ..
     make clean && make deb
-    cp /pve-qemu/pve-qemu-kvm_*_amd64.deb /output/
+    cp /pve-edk2-firmware/pve-edk2-firmware-ovmf_*_all.deb /output/
     chown -R $(id -u):$(id -g) /output
 "

@@ -7,6 +7,7 @@
 FROM debian:13
 
 ARG DEBIAN_FRONTEND=noninteractive
+ENV DEBIAN_FRONTEND=${DEBIAN_FRONTEND}
 
 RUN <<EOF
 apt-get update

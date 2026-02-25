@@ -1,0 +1,43 @@
+name: Build pve-edk2-firmware
+on:
+  workflow_dispatch:
+    inputs:
+      pve_edk2_firmware_branch:
+        description: 'pve-edk2-firmware branch to build'
+        required: true
+        default: 'master'
+      release_tag:
+        description: 'Optional: add a tag (e.g., v0.0.1) to upload to Releases'
+        required: false
+        type: string
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Build
+        run: |
+          bash scripts/build-pve-qemu.sh ${{ github.event.inputs.pve_edk2_firmware_branch }}
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: pve-qemu-kvm.deb
+          path: output/pve-edk2-firmware-ovmf_*_all.deb
+
+      - name: Create Release
+        if: github.event.inputs.release_tag != ''
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          date_str="$(date -u +%Y-%m-%d)"
+          title="Build: pve-edk2-firmware ${{ github.event.inputs.pve_edk2_firmware_branch }}"
+          gh release create ${{ github.event.inputs.release_tag }} \
+            --title "$title" \
+            --notes "$title (${date_str})" \
+            output/pve-edk2-firmware-ovmf_*_all.deb

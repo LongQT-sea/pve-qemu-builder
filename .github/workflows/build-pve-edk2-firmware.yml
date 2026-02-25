@@ -22,7 +22,7 @@ jobs:
 
       - name: Build
         run: |
-          bash scripts/build-pve-qemu.sh ${{ github.event.inputs.pve_edk2_firmware_branch }}
+          bash scripts/build-pve-edk2-firmware.sh ${{ github.event.inputs.pve_edk2_firmware_branch }}
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4

@@ -1,0 +1,44 @@
+name: Build pve-qemu
+on:
+  workflow_dispatch:
+    inputs:
+      pve_qemu_branch:
+        description: 'proxmox/pve-qemu branch to build'
+        required: true
+        default: 'master'
+      release_tag:
+        description: 'Optional: add a tag (e.g., v0.0.1) to upload to Releases'
+        required: false
+        type: string
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Build
+        run: |
+          mkdir -p output
+          bash scripts/build-pve-qemu.sh ${{ github.event.inputs.pve_qemu_branch }}
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: pve-qemu-kvm.deb
+          path: output/pve-qemu-kvm_*_amd64.deb
+
+      - name: Create Release
+        if: github.event.inputs.release_tag != ''
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          date_str="$(date -u +%Y-%m-%d)"
+          title="Build: pve-qemu ${{ github.event.inputs.pve_qemu_branch }}"
+          gh release create ${{ github.event.inputs.release_tag }} \
+            --title "$title" \
+            --notes "$title (${date_str})" \
+            output/pve-qemu-kvm_*_amd64.deb

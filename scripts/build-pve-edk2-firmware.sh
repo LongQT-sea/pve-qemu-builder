@@ -5,7 +5,7 @@ set -euo pipefail
 BRANCH="${1:-master}"
 IMAGE="ghcr.io/longqt-sea/pve-devbox:latest"
 
-docker run --rm --user $(id -u):$(id -g) \
+docker run --rm \
     -v "./output:/output" \
     "$IMAGE" sh -e -c "
     echo 'APT::Get::Assume-Yes true;' > /etc/apt/apt.conf.d/90assumeyes

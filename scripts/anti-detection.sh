@@ -628,11 +628,11 @@ run_patches() {
         's#"QEMU MICRODRIVE"#"HITACHI Microdrive"#'
 
     apply_sed \
-        'M1d: IDE Harddisk model "QEMU HARDDISK" -> "WDC HARDDISK"' \
+        'M1d: IDE Harddisk model "QEMU HARDDISK" -> "KINGSTON SA400S37"' \
         'hw/ide/core.c' \
         '"QEMU HARDDISK"' \
-        '"WDC HARDDISK"' \
-        's#"QEMU HARDDISK"#"WDC HARDDISK"#'
+        '"KINGSTON SA400S37"' \
+        's#"QEMU HARDDISK"#"KINGSTON SA400S37"#'
 
     # M2
     log_section "M2 -- ATAPI INQUIRY vendor and product strings"

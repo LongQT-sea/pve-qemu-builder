@@ -7,7 +7,7 @@ IMAGE="ghcr.io/longqt-sea/pve-devbox:latest"
 
 docker run --rm \
     -v "./output:/output" \
-    -v "$(pwd)/scripts/anti-detection.sh:/anti-detection.sh:ro" \
+    -v "$(pwd)/scripts/qemu-anti-detection.sh:/anti-detection.sh:ro" \
     "$IMAGE" sh -e -c "
     echo 'APT::Get::Assume-Yes true;' > /etc/apt/apt.conf.d/90assumeyes
     apt-get update
